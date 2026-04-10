@@ -1,0 +1,78 @@
+- name: shipping edit
+  hosts: shipping
+  become: yes
+  tasks: 
+    - name: installing maven
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - maven
+        - mysql
+    - name: install mysql python libraries
+      ansible.builtin.pip:
+        executable: pip3.9
+        name: "{{ item }}"
+      loop:
+      - cryptography
+      - PyMySQL
+    - name: creating the user
+      ansible.builtin.user:
+        name: roboshop
+        comment: roboshop system user
+        system: true
+        shell: /sbin/nologin
+        home: /app
+    - name: remove the app
+      ansible.builtin.file:
+        path: /app
+        state: absent
+    - name: create thge app dir
+      ansible.builtin.file:
+        state: directory
+        path: /app
+    - name: remove the content from the tmp
+      ansible.builtin.file:
+        path: /tmp/shipping.zip
+        state: absent
+    - name: downloading the content
+      ansible.builtin.get_url:
+        url: https://roboshop-artifacts.s3.amazonaws.com/shipping-v3.zip
+        dest: /tmp/shipping.zip
+    - name: unzip the file
+      ansible.builtin.unarchive:
+        src: /tmp/shipping.zip
+        dest: /app
+        remote_src: yes
+    - name: install dependencies
+      ansible.builtin.command: mvn clean package
+      args:
+        chdir: /app
+    - name: move jar file
+      ansible.builtin.command: mv target/shipping-1.0.jar shipping.jar
+      args:
+        chdir: /app
+         - name: copy shipping service
+    ansible.builtin.copy:
+      src: shipping.service
+      dest: /etc/systemd/system/shipping.service
+
+  - name: import shipping data into mysql
+      community.mysql.mysql_db:
+        state: import
+        name: all
+        login_host: mysql.rajeswari.shop
+        login_user: root
+        login_password: RoboShop@1
+        target: "{{ item }}"
+      loop:
+      - /app/db/schema.sql
+      - /app/db/app-user.sql 
+      - /app/db/master-data.sql
+
+  - name: daemon reload enable and start
+      ansible.builtin.systemd_service:
+        name: shipping
+        enabled: true
+        state: started
+        daemon_reload: true
