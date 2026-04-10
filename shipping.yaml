@@ -52,25 +52,25 @@
       ansible.builtin.command: mv target/shipping-1.0.jar shipping.jar
       args:
         chdir: /app
-         - name: copy shipping service
-    ansible.builtin.copy:
-      src: shipping.service
-      dest: /etc/systemd/system/shipping.service
+    - name: copy shipping service
+      ansible.builtin.copy:
+        src: shipping.service
+        dest: /etc/systemd/system/shipping.service
 
-  - name: import shipping data into mysql
+    - name: import shipping data into mysql
       community.mysql.mysql_db:
-        state: import
-        name: all
-        login_host: mysql.rajeswari.shop
-        login_user: root
-        login_password: RoboShop@1
-        target: "{{ item }}"
+          state: import
+          name: all
+          login_host: mysql.rajeswari.shop
+          login_user: root
+          login_password: RoboShop@1
+          target: "{{ item }}"
       loop:
-      - /app/db/schema.sql
-      - /app/db/app-user.sql 
-      - /app/db/master-data.sql
+        - /app/db/schema.sql
+        - /app/db/app-user.sql 
+        - /app/db/master-data.sql
 
-  - name: daemon reload enable and start
+    - name: daemon reload enable and start
       ansible.builtin.systemd_service:
         name: shipping
         enabled: true
