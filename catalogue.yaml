@@ -11,7 +11,7 @@
         name: nodejs:20
         enabled: yes
     - name: installnig nodejs
-      ansible.builtin,package:
+      ansible.builtin.package:
         name: nodejs
         state: present
     - name: create user
